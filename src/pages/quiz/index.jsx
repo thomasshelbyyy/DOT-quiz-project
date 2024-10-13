@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
 import QuizComponent from "../../components/quizComponent";
+import { resetLocalStorage } from "../../utils";
 
 const QuizPage = ({
 	setPage,
 	questions,
 	setAnsweredQuestionCount,
 	setCorrectAnswerCount,
+	currentQuestion,
+	setCurrentQuestion,
+	timer,
+	setTimer,
 }) => {
-	const [currentQuestion, setCurrentQuestion] = useState(0);
-	const [timer, setTimer] = useState(180); // Timer set to 180 seconds (3 minutes)
-
-	// Convert timer to minutes and seconds format
 	const formatTime = (time) => {
 		const minutes = Math.floor(time / 60);
 		const seconds = time % 60;
-		// Pad seconds with leading zero if it's less than 10
 		return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
 	};
+
+	useEffect(() => {
+		const handleClick = (e) => {
+			e.preventDefault();
+			if (e.key === "Escape") {
+				alert("Click");
+			}
+		};
+		window.addEventListener("keyup", handleClick);
+
+		return () => window.removeEventListener("keyup", handleClick);
+	}, []);
 
 	useEffect(() => {
 		const intervalId = setInterval(() => {
@@ -25,17 +37,30 @@ const QuizPage = ({
 					return prev - 1;
 				} else {
 					setPage("finish");
-					clearInterval(intervalId); // Clear the interval when time runs out
-					return 0; // Ensure timer doesn't go negative
+					clearInterval(intervalId);
+					setCurrentQuestion(0);
+					setTimer(180);
+					localStorage.removeItem("quizActive");
+					resetLocalStorage();
+					return 0;
 				}
 			});
 		}, 1000);
 
-		// Clean up interval on unmount
 		return () => clearInterval(intervalId);
 	}, [setPage]);
 
-	// Ensure we are rendering a valid question when currentQuestion changes
+	useEffect(() => {
+		const handleClose = () => {
+			localStorage.setItem("quizEndTime", Date.now());
+			localStorage.setItem("timeRemaining", timer);
+		};
+
+		window.addEventListener("beforeunload", handleClose);
+
+		return () => window.removeEventListener("beforeunload", handleClose);
+	}, [timer]);
+
 	const currentQuestionData = questions[currentQuestion];
 
 	return (
@@ -43,18 +68,18 @@ const QuizPage = ({
 			<div className="w-full flex justify-between px-4 py-3">
 				<p>No. {currentQuestion + 1}</p>
 				<p>Time Left: {formatTime(timer)}</p>{" "}
-				{/* Use formatTime to display timer */}
 			</div>
 			{currentQuestionData && (
 				<QuizComponent
 					correctAnswer={currentQuestionData.correct_answer}
 					currentQuestion={currentQuestion}
-					question={currentQuestionData.question} // Pass only the question text
+					question={currentQuestionData.question}
 					setCurrentQuestion={setCurrentQuestion}
 					incorrectAnswers={currentQuestionData.incorrect_answers}
 					setAnsweredQuestionCount={setAnsweredQuestionCount}
 					setCorrectAnswerCount={setCorrectAnswerCount}
 					setPage={setPage}
+					setTimer={setTimer}
 				/>
 			)}
 		</div>

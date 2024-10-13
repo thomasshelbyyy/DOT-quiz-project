@@ -1,24 +1,62 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/authContext";
 import FinishPage from "../finish";
 import QuizPage from "../quiz";
-import { getQuiz } from "../../utils";
+import { getQuiz, resetLocalStorage } from "../../utils";
 import { PowerIcon } from "@heroicons/react/16/solid";
 
 export default function HomePage() {
 	const { loggedInUser, setLoggedInUser, setIsAuthenticated } = useAuth();
+
+	useEffect(() => {
+		const isQuizActive = localStorage.getItem("quizActive");
+		if (isQuizActive === "true") {
+			setCurrentQuestion(parseInt(localStorage.getItem("currentQuestion")));
+			setAnsweredQuestionCount(
+				parseInt(localStorage.getItem("answeredQuestion"))
+			);
+			setCorrectAsnwerCount(
+				parseInt(localStorage.getItem("correctAnswerCount"))
+			);
+			setQuestions(JSON.parse(localStorage.getItem("questions")));
+
+			const savedEndTime = localStorage.getItem("quizEndTime");
+			const savedTimeRemaining = localStorage.getItem("timeRemaining");
+
+			const currentTime = Date.now();
+			const timeElapsed = Math.floor((currentTime - savedEndTime) / 1000);
+
+			const newTimeRemaining = savedTimeRemaining - timeElapsed;
+
+			if (newTimeRemaining > 0) {
+				setTimer(newTimeRemaining);
+				setPage("quiz");
+			} else {
+				setTimer(0);
+				setPage("finish");
+				localStorage.removeItem("quizActive");
+				resetLocalStorage();
+			}
+		}
+	}, []);
 
 	const [page, setPage] = useState("home");
 	const [questions, setQuestions] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [correctAnswerCount, setCorrectAsnwerCount] = useState(0);
 	const [answeredQuestionCount, setAnsweredQuestionCount] = useState(0);
+	const [currentQuestion, setCurrentQuestion] = useState(0);
+	const [timer, setTimer] = useState(180);
 
 	const handleClick = async () => {
 		setIsLoading(true);
 		const quiz = await getQuiz();
 		setIsLoading(false);
 		setQuestions(quiz);
+		localStorage.setItem("quizActive", true);
+		localStorage.setItem("correctAnswerCount", 0);
+		localStorage.setItem("answeredQuestion", 0);
+		localStorage.setItem("currentQuestion", 0);
 		setPage("quiz");
 	};
 
@@ -59,6 +97,10 @@ export default function HomePage() {
 					questions={questions}
 					setAnsweredQuestionCount={setAnsweredQuestionCount}
 					setCorrectAnswerCount={setCorrectAsnwerCount}
+					currentQuestion={currentQuestion}
+					setCurrentQuestion={setCurrentQuestion}
+					setTimer={setTimer}
+					timer={timer}
 				/>
 			)}
 			{page === "finish" && (
@@ -70,13 +112,10 @@ export default function HomePage() {
 					wrongAnswerCount={questions.length - correctAnswerCount}
 					setAnsweredQuestionCount={setAnsweredQuestionCount}
 					setCorrectAnswerCount={setCorrectAsnwerCount}
+					setTimer={setTimer}
+					setCurrentQuestion={setCurrentQuestion}
 				/>
 			)}
 		</main>
 	);
 }
-
-const answers = {
-	correctAnswer: "Poison Potato",
-	incorrectAnswer: ["Mors Oil", "Alpacookie", "Parmesansho Fruit"],
-};

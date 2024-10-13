@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { resetLocalStorage } from "../../utils";
 
 export default function QuizComponent({
 	question,
@@ -9,14 +10,13 @@ export default function QuizComponent({
 	setCorrectAnswerCount,
 	setAnsweredQuestionCount,
 	setPage,
+	setTimer,
 }) {
 	const [answers, setAnswers] = useState([]);
 	const [choosenAnswer, setChoosenAnswer] = useState(null);
-	console.log({ correctAnswer });
 
 	useEffect(() => {
 		const allAnswers = [correctAnswer, ...incorrectAnswers];
-		// Shuffle the answers randomly
 		const shuffledAnswers = allAnswers.sort(() => Math.random() - 0.5);
 		setAnswers(shuffledAnswers);
 	}, [correctAnswer, incorrectAnswers]);
@@ -27,15 +27,36 @@ export default function QuizComponent({
 
 	const handleNextQuestion = () => {
 		const isAnswerCorrect = choosenAnswer === correctAnswer;
+
 		if (isAnswerCorrect) {
-			setCorrectAnswerCount((prev) => prev + 1);
+			setCorrectAnswerCount((prev) => {
+				const newCount = prev + 1;
+				localStorage.setItem("correctAnswerCount", newCount);
+				return newCount;
+			});
 		}
 
-		setAnsweredQuestionCount((prev) => prev + 1);
-		setCurrentQuestion((prev) => prev + 1);
+		setAnsweredQuestionCount((prev) => {
+			const newCount = prev + 1;
+			localStorage.setItem("answeredQuestion", newCount);
+			return newCount;
+		});
+
 		if (currentQuestion === 29) {
 			setPage("finish");
+			setCurrentQuestion(0);
+			setTimer(180);
+			localStorage.removeItem("quizActive");
+			resetLocalStorage();
+		} else {
+			setCurrentQuestion((prev) => {
+				const newCount = prev + 1;
+				localStorage.setItem("currentQuestion", newCount);
+				return newCount;
+			});
 		}
+
+		setChoosenAnswer(null);
 	};
 
 	return (
@@ -61,7 +82,7 @@ export default function QuizComponent({
 				onClick={handleNextQuestion}
 				className="mt-4 bg-blue-600 text-white py-2 px-4 rounded float-right"
 			>
-				{currentQuestion === 30 ? "Finish" : "Next Question"}
+				{currentQuestion === 29 ? "Finish" : "Next Question"}
 			</button>
 		</>
 	);

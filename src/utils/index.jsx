@@ -6,3 +6,11 @@ export const getQuiz = async () => {
 	localStorage.setItem("questions", JSON.stringify(data.results));
 	return data.results;
 };
+
+export const resetLocalStorage = () => {
+	localStorage.setItem("currentQuestion", 0);
+	localStorage.setItem("correctAnswerCount", 0);
+	localStorage.removeItem("quizEndTime");
+	localStorage.removeItem("timeRemaining");
+	localStorage.setItem("answeredQuestion", 0);
+};

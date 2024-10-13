@@ -10,6 +10,8 @@ const FinishPage = ({
 	setQuestions,
 	setAnsweredQuestionCount,
 	setCorrectAnswerCount,
+	setTimer,
+	setCurrentQuestion,
 }) => {
 	const score = Math.ceil((correctAnswerCount / 30) * 100);
 	const handlePlayAgain = async () => {
@@ -17,11 +19,15 @@ const FinishPage = ({
 		setQuestions(data);
 		setAnsweredQuestionCount(0);
 		setCorrectAnswerCount(0);
+		setTimer(180);
 		setPage("quiz");
+		setCurrentQuestion(0);
+		localStorage.setItem("quizActive", true);
 	};
 	const handleBackToHome = () => {
 		setAnsweredQuestionCount(0);
 		setCorrectAnswerCount(0);
+		setCurrentQuestion(0);
 		setPage("home");
 	};
 	return (
